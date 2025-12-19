@@ -1,4 +1,5 @@
 import TaskList from './components/TaskList.jsx';
+import NewTaskForm from './components/NewTaskForm.jsx';
 import { useEffect, useState } from 'react';
 import './App.css';
 import axios from 'axios';
@@ -34,6 +35,12 @@ const markCompleteTaskAPI = (id, markComplete) => {
     .catch(error => console.log(error));
 };
 
+const deleteTaskAPI = (id) => {
+  return axios.delete(`${kbaseURL}/tasks/${id}`)
+    .then(response => response.data)
+    .catch(error => console.log(error));
+};
+
 const convertFromAPI = (task) => {
   const { id, title, description } = task;
   const newTask = {
@@ -44,6 +51,12 @@ const convertFromAPI = (task) => {
   };
   return newTask;
 };
+
+const addTaskAPI = (newTask) => {
+  return axios.post(`${kbaseURL}/tasks`, newTask)
+    .catch(error => console.log(error));
+};
+
 
 
 const App = () => {
@@ -64,6 +77,16 @@ const App = () => {
     getAllTasks();
   }, []);
 
+  const onHandleSubmit = (formData) => {
+    console.log('Making a new task!');
+    return addTaskAPI(formData)
+      .then((result) => {
+        return setTaskData(prevTaskData => [convertFromAPI(result.data.task), ...prevTaskData]
+        );
+      }
+      );
+  };
+
   const handleComplete = (id) => {
     let markComplete = null;
     for (const task of taskData) {
@@ -80,6 +103,7 @@ const App = () => {
   };
 
   const handleDelete = (id) => {
+    deleteTaskAPI(id);
     setTaskData(prevTaskData => {
       return prevTaskData.filter(task => task.id !== id);
     });
@@ -91,6 +115,9 @@ const App = () => {
         <h1>Ada&apos;s Task List</h1>
       </header>
       <main>
+        <NewTaskForm
+          onHandleSubmit={onHandleSubmit}
+        />
         <div>{<TaskList
           tasks={taskData}
           onComplete={handleComplete}
