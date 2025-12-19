@@ -28,6 +28,12 @@ const getAllTasksAPI = () => {
     .catch(error => console.log(error));
 };
 
+const markCompleteTaskAPI = (id, markComplete) => {
+  return axios.patch(`${kbaseURL}/tasks/${id}/${markComplete}`)
+    .then(response => response.data)
+    .catch(error => console.log(error));
+};
+
 const convertFromAPI = (task) => {
   const { id, title, description } = task;
   const newTask = {
@@ -40,14 +46,17 @@ const convertFromAPI = (task) => {
 };
 
 
-
 const App = () => {
   const [taskData, setTaskData] = useState([]);
 
   const getAllTasks = () => {
     return getAllTasksAPI()
       .then(tasks => {
-        setTaskData(tasks);
+        const newTasks = tasks.map(task => {
+          return convertFromAPI(task);
+        });
+
+        setTaskData(newTasks);
       });
   };
 
@@ -56,14 +65,18 @@ const App = () => {
   }, []);
 
   const handleComplete = (id) => {
-    setTaskData((prevTaskData) => {
-      return prevTaskData.map(task => {
-        if (task.id === id) {
-          return toggleCompleteTask(task);
-        } else {return task;}
-      });
+    let markComplete = null;
+    for (const task of taskData) {
+      if (task.id === id) {
+        markComplete = !task.isComplete ? 'mark_complete' : 'mark_incomplete';
+      }
     }
-    );
+    return markCompleteTaskAPI(id, markComplete)
+      .then (() => {
+        return setTaskData(taskData => {
+          return taskData.map(task => task.id === id ? toggleCompleteTask(task) : task);
+        });
+      });
   };
 
   const handleDelete = (id) => {
